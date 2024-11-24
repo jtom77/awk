@@ -1,0 +1,76 @@
+#! /usr/bin/awk -f
+
+BEGIN {
+	imp_count=-1;
+	err_count=-1;
+	val="";
+	print "Starting"
+}
+
+
+/polling \/opt/ {
+	if (err_count == 0) {
+		print val" +"
+	} 
+	else if (imp_count == 0) {
+		print val" -"
+	} 
+	else {
+		print val" ?"
+	}
+	
+	
+	if (imp_count >= 0) {
+		print "\t"imp_count" matches"; 
+	}
+	if (err_count >= 0) {
+		print "\t"err_count" errors";
+	}
+	
+
+	print "\tFiles:"
+
+	# Print file infos
+	if (imp_count > 0) {
+		print "\t"imp_count" Matches"; 
+		for (i=0; i<imp_count; i++) {
+			printf("\t%2s - %s\n", i, arr_imp[i])
+		}	       
+	}			
+	if (err_count > 0) {
+		print "\t"err_count" Errors";
+		for (i=0; i<err_count; i++) {
+			printf("\t%2s - %s\n", i, arr_err[i])
+		}	       
+	}			
+	val=$2; 
+	imp_count=0; 
+	err_count=0;
+	for (v in arr_err) {
+		delete arr_err[v]
+	}
+	for (v in arr_imp) {
+		delete arr_imp[v]
+	}
+} 
+
+
+/addSentQueueItem/ {
+	if (match($0,/liste.*pdf/)) {
+		arr_imp[imp_count]=substr($0, RSTART, RLENGTH)
+	}	
+
+	imp_count=imp_count+1
+}
+
+/resulted in an exception/ {
+	if (match($0,/liste.*pdf/)) {
+		arr_err[err_count]=substr($0, RSTART, RLENGTH)
+	}	
+
+	err_count=err_count+1
+}
+
+END {
+	print "\t"imp_count
+} 
